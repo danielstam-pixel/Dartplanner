@@ -51,8 +51,8 @@
         <section id="setup" class="view active">
           <div class="section-heading">
             <div class="section-heading-copy">
-              <p class="eyebrow">Stap 1</p>
-              <h2>Toernooi aanmaken</h2>
+              <p class="eyebrow">Voorbereiding</p>
+              <h2>Toernooi instellen</h2>
             </div>
             <div class="button-row button-row--actions">
               <button id="saveSetupBtn" class="primary-button" type="button">Opzet bevestigen</button>
@@ -121,11 +121,11 @@
           </div>
         </section>
 
-        <section id="draw" class="view">
-          <div class="section-heading">
+        <section id="draw" class="view draw-mode">
+          <div class="section-heading draw-heading">
             <div class="section-heading-copy">
-              <p class="eyebrow">Stap 2</p>
-              <h2>Loting en indeling</h2>
+              <p class="eyebrow">Loting</p>
+              <h2>Indeling en controle</h2>
             </div>
             <div class="button-row button-row--actions">
               <button id="makeDrawBtn" class="primary-button" type="button">Loting maken</button>
@@ -133,34 +133,43 @@
             </div>
           </div>
 
-          <div id="drawStage" class="draw-stage"></div>
+          <div id="drawPreflight" class="draw-preflight"></div>
           <div id="drawResults" class="draw-results">
-            <div id="teamsPanel" class="panel draw-panel"></div>
-            <div class="panel draw-pools-shell">
+            <section id="teamsPanel" class="panel draw-panel"></section>
+            <section class="panel draw-pools-shell">
               <div class="section-heading compact">
                 <h3>Poule-indeling</h3>
               </div>
               <div id="poolsPanel" class="pools-grid"></div>
-            </div>
+            </section>
           </div>
         </section>
 
-        <section id="matches" class="view">
-          <div class="section-heading">
+        <section id="matches" class="view tournament-home">
+          <div class="section-heading tournament-home-heading">
             <div class="section-heading-copy">
-              <p class="eyebrow">Stap 3</p>
-              <h2>Wedstrijden</h2>
+              <p class="eyebrow">Wedstrijdregie</p>
+              <h2>Live toernooi</h2>
             </div>
           </div>
-          <div id="livePanel" class="live-strip"></div>
+          <div class="home-grid">
+            <section class="home-primary">
+              <div id="livePanel" class="live-strip"></div>
+              <div id="matchQueuePanel" class="panel"></div>
+            </section>
+            <aside class="home-secondary">
+              <div id="poolProgressPanel" class="panel"></div>
+              <div id="homeKnockoutPanel" class="panel"></div>
+            </aside>
+          </div>
           <div id="matchSections" class="match-sections"></div>
         </section>
 
         <section id="standings" class="view">
           <div class="section-heading">
             <div class="section-heading-copy">
-              <p class="eyebrow">Stap 4</p>
-              <h2>Standen en bracket</h2>
+              <p class="eyebrow">Analyse</p>
+              <h2>Standen en knock-out</h2>
             </div>
             <div class="button-row button-row--actions">
               <button id="exportCsvBtn" class="secondary-button" type="button">CSV export</button>

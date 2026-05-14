@@ -20,11 +20,14 @@
     roleBadge: document.getElementById("roleBadge"),
     stepper: document.getElementById("stepper"),
     progressPanel: document.getElementById("progressPanel"),
-    drawStage: document.getElementById("drawStage"),
+    drawPreflight: document.getElementById("drawPreflight"),
     drawResults: document.getElementById("drawResults"),
     teamsPanel: document.getElementById("teamsPanel"),
     poolsPanel: document.getElementById("poolsPanel"),
     livePanel: document.getElementById("livePanel"),
+    matchQueuePanel: document.getElementById("matchQueuePanel"),
+    poolProgressPanel: document.getElementById("poolProgressPanel"),
+    homeKnockoutPanel: document.getElementById("homeKnockoutPanel"),
     matchSections: document.getElementById("matchSections"),
     standingsPanel: document.getElementById("standingsPanel"),
     knockoutPanel: document.getElementById("knockoutPanel"),
@@ -399,10 +402,10 @@
     const regularDone = state.matches.filter((match) => match.phase === "pool" && match.status === "done").length;
     const regularTotal = state.matches.filter((match) => match.phase === "pool").length;
     const text = state.stage === "setup"
-      ? "Eerst de opzet vastzetten."
+      ? "Maak het toernooi klaar voor de loting."
       : state.stage === "draw"
-        ? "De opzet staat vast. Maak nu de loting en rond die af."
-        : `Poolwedstrijden klaar: ${regularDone}/${regularTotal}. Knock-out volgt automatisch zodra de poules rond zijn.`;
+        ? "Maak de indeling en controleer direct de gemaakte poules."
+        : `Poolwedstrijden klaar: ${regularDone}/${regularTotal}. De knock-out volgt automatisch zodra de poules rond zijn.`;
     els.progressPanel.innerHTML = `
       <h3>Toernooistatus</h3>
       <p>${escapeHtml(text)}</p>
@@ -424,22 +427,24 @@
       ? Math.ceil(state.players.length / 2)
       : state.players.length;
     const modeLabel = state.mode === "pool-knockout" ? "Poule + knock-out" : "Single elimination";
+    const hasDraw = state.pools.length > 0;
 
-    els.drawStage.innerHTML = `
-      <article class="draw-card">
-        <p class="eyebrow">Deelnemers</p>
-        <strong>${entrants}</strong>
-        <span>${state.teamMode === "pairs" ? "teams in de loting" : "spelers in de loting"}</span>
-      </article>
-      <article class="draw-card">
-        <p class="eyebrow">Format</p>
-        <strong>${escapeHtml(modeLabel)}</strong>
-        <span>${state.mode === "pool-knockout" ? `${state.poolCount} poules richting finale` : "directe knock-outstructuur"}</span>
-      </article>
-      <article class="draw-card">
-        <p class="eyebrow">Speelvloer</p>
-        <strong>2 borden</strong>
-        <span>parallel zichtbaar in het wedstrijdscherm</span>
+    els.drawPreflight.innerHTML = `
+      <article class="draw-hero-card">
+        <div>
+          <p class="eyebrow">${hasDraw ? "Loting gereed" : "Klaar om te loten"}</p>
+          <h3>${hasDraw ? "Controleer spelers en poules" : "Maak direct de toernooi-indeling"}</h3>
+          <p class="muted">
+            ${hasDraw
+              ? "De uitslag staat hieronder en kan nog handmatig worden gecorrigeerd."
+              : "Bevestig de loting en laat de app meteen de deelnemers en poules indelen."}
+          </p>
+        </div>
+        <div class="draw-preflight-metrics">
+          <div><strong>${entrants}</strong><span>${state.teamMode === "pairs" ? "koppels" : "spelers"}</span></div>
+          <div><strong>${state.mode === "pool-knockout" ? state.poolCount : 1}</strong><span>poules</span></div>
+          <div><strong>${escapeHtml(modeLabel)}</strong><span>format</span></div>
+        </div>
       </article>
     `;
   }
@@ -448,7 +453,7 @@
     if (!state.teams.length) {
       els.teamsPanel.innerHTML = `
         <div class="section-heading compact">
-          <h3>${state.teamMode === "pairs" ? "Gemaakte koppels" : "Gemaakte spelers"}</h3>
+          <h3>${state.teamMode === "pairs" ? "Gemaakte koppels" : "Gelote spelers"}</h3>
         </div>
         <p class="muted">Klik op <strong>Loting maken</strong> om hier direct de gemaakte indeling te zien.</p>
       `;
@@ -456,7 +461,7 @@
     }
     els.teamsPanel.innerHTML = `
       <div class="section-heading compact">
-        <h3>${state.teamMode === "pairs" ? "Gemaakte koppels" : "Gemaakte spelers"}</h3>
+        <h3>${state.teamMode === "pairs" ? "Gemaakte koppels" : "Gelote spelers"}</h3>
       </div>
       <div class="teams-list">
         ${state.teams.map((team, index) => `
@@ -540,12 +545,18 @@
   function renderMatches() {
     const ordered = orderedMatches();
     const liveSlots = boardUtils.getBoardLiveSlots(ordered, boardCount);
+    const queue = tournamentViewModels.buildMatchQueue(ordered, boardCount);
+    const poolProgress = tournamentViewModels.buildPoolProgressSummary(state.matches);
+    const knockoutStatus = tournamentViewModels.buildKnockoutStatus(state.matches);
     const highlightedMatchIds = new Set(
       liveSlots
         .filter((slot) => slot.match)
         .map((slot) => slot.match.id)
     );
 
+    renderHomeMatchQueue(queue);
+    renderPoolProgress(poolProgress);
+    renderHomeKnockoutStatus(knockoutStatus);
     els.livePanel.innerHTML = `
       ${liveSlots.map((slot) => renderLiveBoardSlot(slot)).join("")}
     `;
@@ -606,6 +617,56 @@
       .join("");
 
     bindMatchInputs();
+  }
+
+  function renderHomeMatchQueue(queue) {
+    const section = (title, matches) => `
+      <div class="queue-block">
+        <p class="queue-label">${title}</p>
+        ${matches.length
+          ? matches.map((match) => `
+              <article class="queue-card">
+                <strong>${escapeHtml(matchName(match))}</strong>
+                <span class="match-meta">${escapeHtml(match.roundName)} &middot; Bord ${match.board}</span>
+              </article>
+            `).join("")
+          : "<p class=\"muted\">Geen wedstrijden in deze rij.</p>"}
+      </div>
+    `;
+
+    els.matchQueuePanel.innerHTML = `
+      <div class="section-heading compact">
+        <h3>Nu en straks</h3>
+      </div>
+      ${section("Nu", queue.now)}
+      ${section("Hierna", queue.next)}
+      ${queue.later.length ? section("Later", queue.later) : ""}
+    `;
+  }
+
+  function renderPoolProgress(summary) {
+    els.poolProgressPanel.innerHTML = `
+      <div class="section-heading compact">
+        <h3>Poulevoortgang</h3>
+      </div>
+      <div class="progress-metrics">
+        <div><strong>${summary.completed}</strong><span>Klaar</span></div>
+        <div><strong>${summary.remaining}</strong><span>Resterend</span></div>
+        <div><strong>${summary.total}</strong><span>Totaal</span></div>
+      </div>
+    `;
+  }
+
+  function renderHomeKnockoutStatus(status) {
+    els.homeKnockoutPanel.innerHTML = `
+      <div class="section-heading compact">
+        <h3>Knock-outstatus</h3>
+      </div>
+      <div class="bracket-slot">
+        <strong>${escapeHtml(status.title)}</strong>
+        <div>${escapeHtml(status.body)}</div>
+      </div>
+    `;
   }
 
   function renderLiveBoardSlot(slot) {
