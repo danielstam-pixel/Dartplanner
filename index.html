@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Darttoernooi Planner</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-backdrop"></div>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Darttoernooi</p>
+        <h1>Planner en Standen</h1>
+      </div>
+      <div class="header-actions">
+        <span id="roleBadge" class="badge">Admin</span>
+        <button id="settingsBtn" class="icon-button" type="button" aria-label="Instellingen">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19.14 12.94a7.81 7.81 0 0 0 .05-.94 7.81 7.81 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54a.49.49 0 0 0-.49-.42h-3.84a.49.49 0 0 0-.49.42l-.36 2.54a7.2 7.2 0 0 0-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.7 8.84a.5.5 0 0 0 .12.64l2.03 1.58a7.81 7.81 0 0 0-.05.94 7.81 7.81 0 0 0 .05.94L2.82 14.52a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.38 1.05.69 1.63.94l.36 2.54a.49.49 0 0 0 .49.42h3.84a.49.49 0 0 0 .49-.42l.36-2.54c.58-.25 1.13-.56 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="stepper-label">Volgorde</div>
+        <nav id="stepper" class="stepper" aria-label="Toernooistappen">
+          <button class="nav-item active" type="button" data-view="setup">
+            <span class="step-index">1</span>
+            <span>Toernooi</span>
+          </button>
+          <button class="nav-item" type="button" data-view="draw">
+            <span class="step-index">2</span>
+            <span>Loting</span>
+          </button>
+          <button class="nav-item" type="button" data-view="matches">
+            <span class="step-index">3</span>
+            <span>Wedstrijden</span>
+          </button>
+          <button class="nav-item" type="button" data-view="standings">
+            <span class="step-index">4</span>
+            <span>Standen</span>
+          </button>
+        </nav>
+        <div id="progressPanel" class="sidebar-panel"></div>
+      </aside>
+
+      <section class="content">
+        <section id="setup" class="view active">
+          <div class="section-heading">
+            <div class="section-heading-copy">
+              <p class="eyebrow">Stap 1</p>
+              <h2>Toernooi aanmaken</h2>
+            </div>
+            <div class="button-row button-row--actions">
+              <button id="saveSetupBtn" class="primary-button" type="button">Opzet bevestigen</button>
+            </div>
+          </div>
+
+          <div class="hero-panel compact-hero">
+            <div>
+              <p class="hero-kicker">Vaste speelopzet</p>
+              <h3>Altijd 2 borden actief, daarna direct door naar de loting.</h3>
+            </div>
+            <div class="hero-metrics">
+              <div>
+                <strong>2</strong>
+                <span>Borden</span>
+              </div>
+              <div>
+                <strong id="heroPlayers">8</strong>
+                <span>Spelers</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              Toernooinaam
+              <input id="tournamentName" type="text" value="Vrijdagavond Darts">
+            </label>
+            <label>
+              Aantal spelers
+              <input id="playerCount" type="number" min="4" step="1" value="8">
+            </label>
+            <label>
+              Toernooivorm
+              <select id="tournamentMode">
+                <option value="pool-knockout">Poule + knock-out</option>
+                <option value="single-elimination">Single elimination</option>
+              </select>
+            </label>
+            <label>
+              Teamspel
+              <select id="teamMode">
+                <option value="single">Individueel</option>
+                <option value="pairs">Koppels van 2</option>
+              </select>
+            </label>
+            <label id="poolCountWrap">
+              Aantal poules
+              <select id="poolCount">
+                <option value="1">1 poule</option>
+                <option value="2">2 poules</option>
+              </select>
+            </label>
+            <label>
+              Legs per wedstrijd
+              <input id="legsTarget" type="number" min="1" max="15" value="3">
+            </label>
+          </div>
+
+          <div class="panel compact-panel">
+            <div class="section-heading compact">
+              <h3>Spelers</h3>
+              <button id="fillPlayersBtn" class="ghost-button" type="button">Velden aanvullen</button>
+            </div>
+            <div id="playersList" class="name-list compact-list"></div>
+          </div>
+        </section>
+
+        <section id="draw" class="view">
+          <div class="section-heading">
+            <div class="section-heading-copy">
+              <p class="eyebrow">Stap 2</p>
+              <h2>Loting en indeling</h2>
+            </div>
+            <div class="button-row button-row--actions">
+              <button id="makeDrawBtn" class="primary-button" type="button">Loting maken</button>
+              <button id="finalizeDrawBtn" class="secondary-button" type="button">Loting afronden</button>
+            </div>
+          </div>
+
+          <div id="drawStage" class="draw-stage"></div>
+          <div id="drawResults" class="draw-results">
+            <div id="teamsPanel" class="panel draw-panel"></div>
+            <div class="panel draw-pools-shell">
+              <div class="section-heading compact">
+                <h3>Poule-indeling</h3>
+              </div>
+              <div id="poolsPanel" class="pools-grid"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="matches" class="view">
+          <div class="section-heading">
+            <div class="section-heading-copy">
+              <p class="eyebrow">Stap 3</p>
+              <h2>Wedstrijden</h2>
+            </div>
+          </div>
+          <div id="livePanel" class="live-strip"></div>
+          <div id="matchSections" class="match-sections"></div>
+        </section>
+
+        <section id="standings" class="view">
+          <div class="section-heading">
+            <div class="section-heading-copy">
+              <p class="eyebrow">Stap 4</p>
+              <h2>Standen en bracket</h2>
+            </div>
+            <div class="button-row button-row--actions">
+              <button id="exportCsvBtn" class="secondary-button" type="button">CSV export</button>
+              <button id="printBtn" class="ghost-button" type="button">PDF/print</button>
+            </div>
+          </div>
+          <div id="knockoutPanel" class="panel"></div>
+          <div id="winnerPanel" class="panel"></div>
+          <div id="standingsPanel"></div>
+        </section>
+      </section>
+    </main>
+
+    <div id="settingsModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" data-close-settings="true"></div>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <div class="section-heading compact">
+          <div class="section-heading-copy">
+            <p class="eyebrow">Instellingen</p>
+            <h2 id="settingsTitle">Toegang delen</h2>
+          </div>
+          <div class="button-row button-row--actions">
+            <button id="closeSettingsBtn" class="ghost-button" type="button">Sluiten</button>
+          </div>
+        </div>
+        <div class="access-grid">
+          <div class="access-card">
+            <h3>Admin</h3>
+            <p>Volledige controle over opzet, loting en validatie.</p>
+            <button class="copy-role-link secondary-button" type="button" data-role="admin">Kopieer adminlink</button>
+          </div>
+          <div class="access-card">
+            <h3>Scorer</h3>
+            <p>Kan uitslagen invoeren voor toegewezen wedstrijden.</p>
+            <button class="copy-role-link secondary-button" type="button" data-role="scorer">Kopieer scorerlink</button>
+          </div>
+          <div class="access-card">
+            <h3>Toeschouwer</h3>
+            <p>Kan alleen meekijken naar live scores en bracket.</p>
+            <button class="copy-role-link secondary-button" type="button" data-role="viewer">Kopieer kijklink</button>
+          </div>
+        </div>
+        <div id="shareLinks" class="panel"></div>
+        <div class="button-row modal-actions">
+          <button id="copyLinkBtn" class="ghost-button" type="button">Kopieer huidige link</button>
+          <button id="resetBtn" class="danger-button" type="button">Reset toernooi</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="match-board-utils.js"></script>
+    <script src="tournament-view-models.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
