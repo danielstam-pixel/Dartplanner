@@ -54,43 +54,12 @@
               <p class="eyebrow">Voorbereiding</p>
               <h2>Toernooi instellen</h2>
             </div>
-            <div class="button-row button-row--actions">
-              <button id="saveSetupBtn" class="primary-button" type="button">Opzet bevestigen</button>
-            </div>
-          </div>
-
-          <div class="hero-panel compact-hero">
-            <div>
-              <p class="hero-kicker">Vaste speelopzet</p>
-              <h3>Altijd 2 borden actief, daarna direct door naar de loting.</h3>
-            </div>
-            <div class="hero-metrics">
-              <div>
-                <strong>2</strong>
-                <span>Borden</span>
-              </div>
-              <div>
-                <strong id="heroPlayers">8</strong>
-                <span>Spelers</span>
-              </div>
-            </div>
           </div>
 
           <div class="form-grid">
             <label>
-              Toernooinaam
-              <input id="tournamentName" type="text" value="Vrijdagavond Darts">
-            </label>
-            <label>
               Aantal spelers
               <input id="playerCount" type="number" min="4" step="1" value="8">
-            </label>
-            <label>
-              Toernooivorm
-              <select id="tournamentMode">
-                <option value="pool-knockout">Poule + knock-out</option>
-                <option value="single-elimination">Single elimination</option>
-              </select>
             </label>
             <label>
               Teamspel
@@ -100,15 +69,15 @@
               </select>
             </label>
             <label id="poolCountWrap">
-              Aantal poules
-              <select id="poolCount">
-                <option value="1">1 poule</option>
-                <option value="2">2 poules</option>
+              Best of
+              <select id="legsTarget">
+                <option value="1">Best of 1</option>
+                <option value="3" selected>Best of 3</option>
+                <option value="5">Best of 5</option>
+                <option value="7">Best of 7</option>
+                <option value="9">Best of 9</option>
+                <option value="11">Best of 11</option>
               </select>
-            </label>
-            <label>
-              Legs per wedstrijd
-              <input id="legsTarget" type="number" min="1" max="15" value="3">
             </label>
           </div>
 
@@ -118,6 +87,10 @@
               <button id="fillPlayersBtn" class="ghost-button" type="button">Velden aanvullen</button>
             </div>
             <div id="playersList" class="name-list compact-list"></div>
+          </div>
+
+          <div class="button-row button-row--actions">
+            <button id="saveSetupBtn" class="primary-button" type="button">Opzet bevestigen</button>
           </div>
         </section>
 
@@ -129,7 +102,6 @@
             </div>
             <div class="button-row button-row--actions">
               <button id="makeDrawBtn" class="primary-button" type="button">Loting maken</button>
-              <button id="finalizeDrawBtn" class="secondary-button" type="button">Loting afronden</button>
             </div>
           </div>
 
@@ -143,25 +115,19 @@
               <div id="poolsPanel" class="pools-grid"></div>
             </section>
           </div>
+          <div class="button-row button-row--actions draw-actions-bottom">
+            <button id="finalizeDrawBtn" class="secondary-button" type="button">Loting afronden</button>
+          </div>
         </section>
 
         <section id="matches" class="view tournament-home">
           <div class="section-heading tournament-home-heading">
             <div class="section-heading-copy">
               <p class="eyebrow">Wedstrijdregie</p>
-              <h2>Live toernooi</h2>
+              <h2>Wedstrijden</h2>
             </div>
           </div>
-          <div class="home-grid">
-            <section class="home-primary">
-              <div id="livePanel" class="live-strip"></div>
-              <div id="matchQueuePanel" class="panel"></div>
-            </section>
-            <aside class="home-secondary">
-              <div id="poolProgressPanel" class="panel"></div>
-              <div id="homeKnockoutPanel" class="panel"></div>
-            </aside>
-          </div>
+          <div id="poolProgressPanel" class="panel pool-progress-bar"></div>
           <div id="matchSections" class="match-sections"></div>
         </section>
 
@@ -176,9 +142,9 @@
               <button id="printBtn" class="ghost-button" type="button">PDF/print</button>
             </div>
           </div>
+          <div id="standingsPanel"></div>
           <div id="knockoutPanel" class="panel"></div>
           <div id="winnerPanel" class="panel"></div>
-          <div id="standingsPanel"></div>
         </section>
       </section>
     </main>

@@ -24,25 +24,17 @@
     drawResults: document.getElementById("drawResults"),
     teamsPanel: document.getElementById("teamsPanel"),
     poolsPanel: document.getElementById("poolsPanel"),
-    livePanel: document.getElementById("livePanel"),
-    matchQueuePanel: document.getElementById("matchQueuePanel"),
     poolProgressPanel: document.getElementById("poolProgressPanel"),
-    homeKnockoutPanel: document.getElementById("homeKnockoutPanel"),
     matchSections: document.getElementById("matchSections"),
     standingsPanel: document.getElementById("standingsPanel"),
     knockoutPanel: document.getElementById("knockoutPanel"),
     winnerPanel: document.getElementById("winnerPanel"),
     shareLinks: document.getElementById("shareLinks"),
     toast: document.getElementById("toast"),
-    heroPlayers: document.getElementById("heroPlayers"),
-    poolCountWrap: document.getElementById("poolCountWrap"),
     settingsModal: document.getElementById("settingsModal"),
     setup: {
-      name: document.getElementById("tournamentName"),
       playerCount: document.getElementById("playerCount"),
-      mode: document.getElementById("tournamentMode"),
       teamMode: document.getElementById("teamMode"),
-      poolCount: document.getElementById("poolCount"),
       legsTarget: document.getElementById("legsTarget"),
       playersList: document.getElementById("playersList")
     }
@@ -96,7 +88,7 @@
       playerCount: 8,
       mode: "pool-knockout",
       teamMode: "single",
-      poolCount: 2,
+      poolCount: 1,
       legsTarget: 3,
       players: demoPlayers.slice(0, 8),
       teams: [],
@@ -144,9 +136,8 @@
         merged.stage = "setup";
       }
     }
-    if (!raw.poolCount) {
-      merged.poolCount = Array.isArray(raw.pools) && raw.pools.length ? raw.pools.length : defaultState().poolCount;
-    }
+    merged.mode = "pool-knockout";
+    merged.poolCount = 1;
     return merged;
   }
 
@@ -176,9 +167,7 @@
   function bindSetup() {
     els.setup.playerCount.addEventListener("change", () => {
       renderPlayerInputs();
-      renderSetupMeta();
     });
-    els.setup.mode.addEventListener("change", renderSetupMeta);
     document.getElementById("fillPlayersBtn").addEventListener("click", renderPlayerInputs);
     document.getElementById("saveSetupBtn").addEventListener("click", () => {
       if (!isAdmin()) return;
@@ -216,6 +205,12 @@
       navigate("matches");
       toast("Loting afgerond, wedstrijden geopend");
     });
+    document.addEventListener("click", (event) => {
+      const finalizePoolBtn = event.target.closest("#finalizePoolBtn");
+      if (!finalizePoolBtn) return;
+      if (!isAdmin()) return;
+      finalizePoolPhase();
+    });
     document.getElementById("exportCsvBtn").addEventListener("click", exportCsv);
     document.getElementById("printBtn").addEventListener("click", () => window.print());
   }
@@ -242,14 +237,10 @@
   }
 
   function hydrateSetup() {
-    els.setup.name.value = state.name;
     els.setup.playerCount.value = state.playerCount;
-    els.setup.mode.value = state.mode;
     els.setup.teamMode.value = state.teamMode;
-    els.setup.poolCount.value = String(state.poolCount);
     els.setup.legsTarget.value = state.legsTarget;
     renderPlayerInputs();
-    renderSetupMeta();
   }
 
   function renderAll() {
@@ -263,13 +254,6 @@
     renderStandings();
     renderAccess();
     navigate(activeView);
-  }
-
-  function renderSetupMeta() {
-    const count = Math.max(4, Number(els.setup.playerCount.value) || 4);
-    els.heroPlayers.textContent = count;
-    const isPoolMode = els.setup.mode.value === "pool-knockout";
-    els.poolCountWrap.style.display = isPoolMode ? "grid" : "none";
   }
 
   function renderPlayerInputs() {
@@ -301,11 +285,10 @@
       toast("Voor koppels is een even aantal spelers nodig");
       return false;
     }
-    state.name = els.setup.name.value.trim() || "Darttoernooi";
     state.playerCount = playerCount;
-    state.mode = els.setup.mode.value;
+    state.mode = "pool-knockout";
     state.teamMode = els.setup.teamMode.value;
-    state.poolCount = state.mode === "pool-knockout" ? Number(els.setup.poolCount.value) || 1 : 1;
+    state.poolCount = 1;
     state.legsTarget = Number(els.setup.legsTarget.value) || 3;
     state.players = players;
     return true;
@@ -399,6 +382,12 @@
   }
 
   function renderProgress() {
+    if (activeView === "setup") {
+      els.progressPanel.innerHTML = "";
+      els.progressPanel.hidden = true;
+      return;
+    }
+    els.progressPanel.hidden = false;
     const regularDone = state.matches.filter((match) => match.phase === "pool" && match.status === "done").length;
     const regularTotal = state.matches.filter((match) => match.phase === "pool").length;
     const text = state.stage === "setup"
@@ -450,10 +439,21 @@
   }
 
   function renderTeams() {
+    if (state.teamMode !== "pairs") {
+      els.drawResults.classList.remove("draw-results--pairs");
+      els.drawResults.classList.add("draw-results--single");
+      els.teamsPanel.innerHTML = "";
+      els.teamsPanel.hidden = true;
+      return;
+    }
+
+    els.drawResults.classList.add("draw-results--pairs");
+    els.drawResults.classList.remove("draw-results--single");
+    els.teamsPanel.hidden = false;
     if (!state.teams.length) {
       els.teamsPanel.innerHTML = `
         <div class="section-heading compact">
-          <h3>${state.teamMode === "pairs" ? "Gemaakte koppels" : "Gelote spelers"}</h3>
+          <h3>Gemaakte koppels</h3>
         </div>
         <p class="muted">Klik op <strong>Loting maken</strong> om hier direct de gemaakte indeling te zien.</p>
       `;
@@ -461,14 +461,14 @@
     }
     els.teamsPanel.innerHTML = `
       <div class="section-heading compact">
-        <h3>${state.teamMode === "pairs" ? "Gemaakte koppels" : "Gelote spelers"}</h3>
+        <h3>Gemaakte koppels</h3>
       </div>
       <div class="teams-list">
         ${state.teams.map((team, index) => `
           <div class="team-pill">
             <span class="team-seed">${index + 1}</span>
             <div class="entrant-stack">
-              <p class="team-label">${state.teamMode === "pairs" ? `Koppel ${index + 1}` : `Speler ${index + 1}`}</p>
+              <p class="team-label">Koppel ${index + 1}</p>
               ${renderMemberBlock(team.members)}
             </div>
           </div>
@@ -544,178 +544,94 @@
 
   function renderMatches() {
     const ordered = orderedMatches();
-    const liveSlots = boardUtils.getBoardLiveSlots(ordered, boardCount);
-    const queue = tournamentViewModels.buildMatchQueue(ordered, boardCount);
     const poolProgress = tournamentViewModels.buildPoolProgressSummary(state.matches);
-    const knockoutStatus = tournamentViewModels.buildKnockoutStatus(state.matches);
-    const highlightedMatchIds = new Set(
-      liveSlots
-        .filter((slot) => slot.match)
-        .map((slot) => slot.match.id)
-    );
-
-    renderHomeMatchQueue(queue);
     renderPoolProgress(poolProgress);
-    renderHomeKnockoutStatus(knockoutStatus);
-    els.livePanel.innerHTML = `
-      ${liveSlots.map((slot) => renderLiveBoardSlot(slot)).join("")}
-    `;
 
     if (!state.matches.length) {
       els.matchSections.innerHTML = "<div class=\"panel\"><p class=\"muted\">Na de loting verschijnen hier de wedstrijden.</p></div>";
       return;
     }
 
-    const preview = bracketPreview();
-    const groups = [
-      { key: "pool", title: "Poulewedstrijden" },
-      { key: "tiebreak", title: "Beslissende legs" },
-      { key: "semi", title: "Halve finales" },
-      { key: "final", title: "Finale" }
-    ];
-
-    const bracketIntro = (state.matches.some((match) => match.phase === "semi") || poolPhaseFinished())
-      ? `
-          <section class="panel">
-            <div class="section-heading compact">
-              <h3>Vervolg na de poules</h3>
-            </div>
-            <div class="knockout-grid">
-              <div class="bracket-column">
-                <h3>Halve finales</h3>
-                ${preview.semis.map((semi) => renderBracketSlot(semi)).join("")}
-              </div>
-              <div class="bracket-column">
-                <h3>Finale</h3>
-                ${renderBracketSlot(preview.final)}
-              </div>
-              <div class="bracket-column">
-                <h3>Status</h3>
-                <div class="bracket-slot">
-                  <strong>Routing</strong>
-                  <div>${escapeHtml(preview.status)}</div>
-                </div>
-              </div>
-            </div>
-          </section>
-        `
-      : "";
-
-    els.matchSections.innerHTML = bracketIntro + groups
-      .map((group) => {
-        const matches = ordered.filter((match) => match.phase === group.key);
-        if (!matches.length) return "";
-        return `
-          <section class="match-group">
-            <h3>${group.title}</h3>
-            <div class="match-list">
-              ${matches.map((match) => renderMatchCard(match, highlightedMatchIds)).join("")}
-            </div>
-          </section>
-        `;
-      })
-      .join("");
+    els.matchSections.innerHTML = `
+      <section class="match-group">
+        <div class="section-heading compact">
+          <h3>Wedstrijden</h3>
+          <p class="muted">Voer hier alleen de uitslagen in, in de volgorde van de loting.</p>
+        </div>
+        <div class="match-list match-list--ordered">
+          ${ordered.map((match, index) => renderMatchCard(match, index + 1)).join("")}
+        </div>
+        ${renderPoolFinalizePanel()}
+      </section>
+    `;
 
     bindMatchInputs();
   }
 
-  function renderHomeMatchQueue(queue) {
-    const section = (title, matches) => `
-      <div class="queue-block">
-        <p class="queue-label">${title}</p>
-        ${matches.length
-          ? matches.map((match) => `
-              <article class="queue-card">
-                <strong>${escapeHtml(matchName(match))}</strong>
-                <span class="match-meta">${escapeHtml(match.roundName)} &middot; Bord ${match.board}</span>
-              </article>
-            `).join("")
-          : "<p class=\"muted\">Geen wedstrijden in deze rij.</p>"}
-      </div>
-    `;
-
-    els.matchQueuePanel.innerHTML = `
-      <div class="section-heading compact">
-        <h3>Nu en straks</h3>
-      </div>
-      ${section("Nu", queue.now)}
-      ${section("Hierna", queue.next)}
-      ${queue.later.length ? section("Later", queue.later) : ""}
-    `;
-  }
-
   function renderPoolProgress(summary) {
     els.poolProgressPanel.innerHTML = `
-      <div class="section-heading compact">
-        <h3>Poulevoortgang</h3>
-      </div>
-      <div class="progress-metrics">
-        <div><strong>${summary.completed}</strong><span>Klaar</span></div>
-        <div><strong>${summary.remaining}</strong><span>Resterend</span></div>
-        <div><strong>${summary.total}</strong><span>Totaal</span></div>
-      </div>
-    `;
-  }
-
-  function renderHomeKnockoutStatus(status) {
-    els.homeKnockoutPanel.innerHTML = `
-      <div class="section-heading compact">
-        <h3>Knock-outstatus</h3>
-      </div>
-      <div class="bracket-slot">
-        <strong>${escapeHtml(status.title)}</strong>
-        <div>${escapeHtml(status.body)}</div>
+      <div class="pool-progress-inline">
+        <strong>Poulevoortgang</strong>
+        <div class="progress-metrics progress-metrics--compact">
+          <div><strong>${summary.completed}</strong><span>Klaar</span></div>
+          <div><strong>${summary.remaining}</strong><span>Resterend</span></div>
+          <div><strong>${summary.total}</strong><span>Totaal</span></div>
+        </div>
       </div>
     `;
   }
 
-  function renderLiveBoardSlot(slot) {
-    if (!slot.match) {
-      return `
-        <article class="live-board-card idle">
-          <span class="status">Bord ${slot.board}</span>
-          <div class="match-title">Geen open wedstrijd</div>
-          <div class="match-meta">Dit bord heeft op dit moment geen geplande partij meer.</div>
-        </article>
-      `;
-    }
-
-    return `
-      <article class="live-board-card">
-        <span class="status live">Bord ${slot.board}</span>
-        <div class="match-title">${escapeHtml(matchName(slot.match))}</div>
-        <div class="match-meta">${escapeHtml(slot.match.roundName)} &middot; Best of ${slot.match.targetLegs}</div>
-      </article>
-    `;
-  }
-
-  function renderMatchCard(match, highlightedMatchIds) {
+  function renderMatchCard(match, orderNumber) {
     const readonly = !canEditMatch(match) ? "disabled" : "";
-    const isBoardHighlight = highlightedMatchIds.has(match.id);
+    const maxScore = requiredWinsFor(match);
     const statusClass = match.status === "done"
       ? (match.validatedByAdmin ? "done" : "warn")
-      : isBoardHighlight
-        ? "live"
-        : "";
+      : "";
     const statusText = match.status === "done"
       ? (match.validatedByAdmin ? "Klaar" : "Ingediend")
-      : isBoardHighlight
-        ? "Nu bovenin"
-        : "Gepland";
+      : "Gepland";
 
     return `
       <article class="match-card" data-match-id="${match.id}">
-        <div>
+        <div class="match-order">${orderNumber}</div>
+        <div class="match-copy">
           <div class="match-title">${escapeHtml(matchName(match))}</div>
-          <div class="match-meta">${escapeHtml(match.roundName)} - Bord ${match.board}</div>
+          <div class="match-meta">${escapeHtml(match.roundName)} &middot; Bord ${match.board} &middot; Best of ${match.targetLegs}</div>
         </div>
         <span class="status ${statusClass}">${statusText}</span>
         <div class="score-inputs">
-          <input ${readonly} class="score-a" type="number" min="0" max="${match.targetLegs}" value="${match.scoreA}">
+          <input ${readonly} class="score-a" type="number" min="0" max="${maxScore}" value="${match.scoreA}">
           <strong>-</strong>
-          <input ${readonly} class="score-b" type="number" min="0" max="${match.targetLegs}" value="${match.scoreB}">
+          <input ${readonly} class="score-b" type="number" min="0" max="${maxScore}" value="${match.scoreB}">
         </div>
       </article>
+    `;
+  }
+
+  function renderPoolFinalizePanel() {
+    const semifinalsReady = state.matches.some((match) => match.phase === "semi");
+    if (!state.matches.some((match) => match.phase === "pool") || semifinalsReady) {
+      return "";
+    }
+
+    const regularPoolMatches = state.matches.filter((match) => match.phase === "pool");
+    const tiebreakMatches = state.matches.filter((match) => match.phase === "tiebreak");
+    const regularDone = regularPoolMatches.length > 0 && regularPoolMatches.every((match) => match.status === "done");
+    const tiebreaksPending = tiebreakMatches.some((match) => match.status !== "done");
+    const canFinalize = regularDone && !tiebreaksPending && !hasUnresolvedTies();
+    const helpText = !regularDone
+      ? "Rond eerst alle poulewedstrijden af."
+      : tiebreaksPending || hasUnresolvedTies()
+        ? "Speel eerst de beslissende leg(s) om de knock-outs vrij te geven."
+        : "De knock-outfase kan nu worden klaargezet.";
+
+    return `
+      <div class="pool-finalize-panel">
+        <p class="muted">${escapeHtml(helpText)}</p>
+        <button id="finalizePoolBtn" class="primary-button" type="button" ${canFinalize ? "" : "disabled"}>
+          Poulefase afronden
+        </button>
+      </div>
     `;
   }
 
@@ -745,10 +661,37 @@
 
   function syncTournamentProgress() {
     ensureTieBreakMatches();
-    if (state.mode === "pool-knockout" && poolPhaseFinished() && !hasUnresolvedTies()) {
-      ensureSemifinals();
+    if (state.matches.some((match) => match.phase === "semi")) {
       ensureFinal();
     }
+  }
+
+  function finalizePoolPhase() {
+    const regularPoolMatches = state.matches.filter((match) => match.phase === "pool");
+    if (!regularPoolMatches.length) {
+      toast("Er zijn nog geen poulewedstrijden");
+      return;
+    }
+    if (regularPoolMatches.some((match) => match.status !== "done")) {
+      toast("Rond eerst alle poulewedstrijden af");
+      return;
+    }
+
+    ensureTieBreakMatches();
+    const pendingTiebreaks = state.matches.filter((match) => match.phase === "tiebreak" && match.status !== "done");
+    if (pendingTiebreaks.length || hasUnresolvedTies()) {
+      saveState();
+      renderAll();
+      navigate("matches");
+      toast("Speel eerst de beslissende leg(s)");
+      return;
+    }
+
+    ensureSemifinals();
+    saveState();
+    renderAll();
+    navigate("matches");
+    toast("Poulefase afgerond, knock-outs zijn gestart");
   }
 
   function ensureTieBreakMatches() {
@@ -862,6 +805,9 @@
     }
 
     els.standingsPanel.innerHTML = `
+      <div class="section-heading compact">
+        <h3>Poulestanden</h3>
+      </div>
       <div class="standings-grid">
         ${state.pools.map(renderPoolStanding).join("")}
       </div>
@@ -1114,6 +1060,7 @@
     document.querySelectorAll(".view").forEach((section) => {
       section.classList.toggle("active", section.id === target);
     });
+    renderProgress();
     renderStepper();
   }
 
@@ -1218,7 +1165,11 @@
     const scoreB = Number(rawB);
     if (!Number.isFinite(scoreA) || !Number.isFinite(scoreB)) return { valid: false };
     if (scoreA === scoreB) return { valid: false };
-    if (scoreA > match.targetLegs || scoreB > match.targetLegs) return { valid: false };
+    const targetWins = requiredWinsFor(match);
+    if (scoreA > targetWins || scoreB > targetWins) return { valid: false };
+    if (Math.max(scoreA, scoreB) !== targetWins) return { valid: false };
+    if (Math.min(scoreA, scoreB) >= targetWins) return { valid: false };
+    if ((scoreA + scoreB) > match.targetLegs) return { valid: false };
     return { valid: true, scoreA, scoreB };
   }
 
@@ -1257,6 +1208,10 @@
 
   function isViewer() {
     return role === "viewer";
+  }
+
+  function requiredWinsFor(match) {
+    return Math.floor(Number(match.targetLegs) / 2) + 1;
   }
 
   function roleLabel(value) {

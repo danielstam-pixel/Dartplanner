@@ -1,12 +1,12 @@
 {
-  "id": "d0b2dc23-8fe5-48b7-ae50-77cd79c0fa5c",
+  "id": "8387d3bf-cd1a-4b54-8e78-3a8c93645d91",
   "role": "admin",
   "stage": "setup",
   "name": "Vrijdagavond Darts",
   "playerCount": 8,
   "mode": "pool-knockout",
   "teamMode": "single",
-  "poolCount": 2,
+  "poolCount": 1,
   "legsTarget": 3,
   "players": [
     "Bas",
@@ -21,5 +21,5 @@
   "teams": [],
   "pools": [],
   "matches": [],
-  "updatedAt": 1778790399148
+  "updatedAt": 1778859163706
 }
